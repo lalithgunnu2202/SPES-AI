@@ -33,9 +33,9 @@ class OpenrouterClient:
 
 def prepare_message(query):
     load_dotenv()
-    send_text(query)
+    # send_text(query)
     print(f"user query:{query}")
-    data = run()
+    data = run(query)
     custom_api_key = os.getenv("CUSTOM_API_KEY")
     client = OpenrouterClient(custom_api_key)
     response = client.chat_completion(messages=f"assume you are a chatbot for ecommerce brand, be polite. answer only using the given data: {data} give useful oneliner or give full answer if neccessary for the query: {query}" )

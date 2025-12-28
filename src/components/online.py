@@ -32,8 +32,8 @@ def reqd_dataset(I,chunks,i):
   return reqd_data
 
 
-def run():
-  query = [to_online()]
+def run(user_query):
+  query = [user_query]
 
   index = faiss.read_index("sample.index")
 
