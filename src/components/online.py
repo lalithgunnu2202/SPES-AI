@@ -41,14 +41,14 @@ def run():
   emb_user_query = take_user_query(query)
   D, I = index.search(emb_user_query, k=3)
 
-  with open("pkl_of_chunks.pkl","rb") as f:
+  with open("chunks_folder/pkl_of_chunks.pkl","rb") as f:
     chunks = pickle.load(f)
 
 
 
   dataset_parts = []
 
-  for i in range(3):
+  for i in range(1):
       item = reqd_dataset(I,chunks,i)
       dataset_parts.append(item["chunk"])
 
