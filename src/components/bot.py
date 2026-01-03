@@ -3,8 +3,8 @@ import sys
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-from src.components.llm import *
-from src.components.main import send_text
+from src.components.llm import reply_to_user
+# from src.components.main import send_text
 from src.logger import logging
 
 load_dotenv()
@@ -47,7 +47,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE, tex
     # Show "typing" indicator
     await update.message.chat.send_action(action="typing")
     try:
-        response = prepare_message(user_text)
+        response = reply_to_user(user_text)
         
         # Send response (Telegram has 4096 character limit)
         if len(response) > 4000:

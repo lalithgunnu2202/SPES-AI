@@ -4,3 +4,4 @@ numpy
 pypdf
 python-dotenv
 python-telegram-bot
+pandas

@@ -13,7 +13,7 @@ from sentence_transformers import SentenceTransformer
 import faiss
 import numpy as np
 import pickle
-from src.components.main import to_online
+# from src.components.main import to_online
 
 def emb_query(user_query):
   encoder = SentenceTransformer("BAAI/bge-small-en-v1.5") #dont use name of encoder directly, use a variable here and call it from somewhere else
