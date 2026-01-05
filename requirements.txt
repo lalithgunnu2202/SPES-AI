@@ -1,0 +1,7 @@
+langchain-community
+faiss-cpu
+numpy
+pypdf
+python-dotenv
+python-telegram-bot
+pandas
