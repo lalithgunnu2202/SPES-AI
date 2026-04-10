@@ -1,0 +1,6 @@
+.env
+api_files_qdrant.txt
+data/
+mongo.py
+sample_prod.csv
+trials.py

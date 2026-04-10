@@ -1,0 +1,11 @@
+pandas
+dotenv
+openai
+pydantic
+telegram
+langchain_community
+re
+pickle
+numpy
+qdrant_client
+pymongo
