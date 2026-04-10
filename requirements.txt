@@ -3,9 +3,9 @@ dotenv
 openai
 pydantic
 telegram
-langchain_community
-re
-pickle
+langchain-community
 numpy
 qdrant_client
 pymongo
+pypdf
+qdrant-client

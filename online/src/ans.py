@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from pydantic import BaseModel, Field, ValidationError
 from pymongo import MongoClient
+from pymongo.server_api import ServerApi
+from qdrant_client import QdrantClient
 # from pymongo import MongoClient
 
 # --- Pydantic Schema for Validation ---
@@ -81,8 +83,8 @@ def intent_detection(query):
         # Fallback to a safe 'General' classification
         return {"intent_id": 3, "product_id": 0, "order_id": 0}
 uri=os.getenv('MONGO_URI')
-client = MongoClient(uri, server_api=ServerApi('1'))
-db=client["Spes-AI"]
+mongo_client = MongoClient(uri, server_api=ServerApi('1'))
+db=mongo_client["Spes-AI"]
 products_collection=db["products"]
 def see_prod(intent_dict):
     prod_id=intent_dict["product_id"]
@@ -115,8 +117,12 @@ def order_prod(intent_dict):
     pass
 
 def gen_query(user_text):
+    qdrant_client = QdrantClient(
+    url=os.getenv("QDRANT_URL"), 
+    api_key=os.getenv("QDRANT_API_KEY"),
+    )
     embed_query=encod_chunks(user_text,model_name="BAAI/bge-small-en-v1.5")
-    search_result = client.query_points(
+    search_result = qdrant_client.query_points(
     collection_name="static-collection",
     query=embed_query,
     with_payload=True,
@@ -172,8 +178,9 @@ def process_message(user_text):
         return message
     
     elif intent_dict["intent_id"]==2:
-        product=see_prod(intent_dict)
-        order_prod(intent_dict)
+        pass
+        # product=see_prod(intent_dict)
+        # order_prod(intent_dict)
 
     elif intent_dict["intent_id"]==3:
         message=gen_query(user_text)
@@ -188,3 +195,4 @@ def process_message(user_text):
 
 def reply_to_user(user_text):
     message=process_message(user_text)
+    return message

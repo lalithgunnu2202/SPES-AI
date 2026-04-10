@@ -133,7 +133,7 @@ def make_chunks(sections,start):
 # !pip install sentence-transformers faiss-cpu
 
 # cont_to_embed = [chunk["chunk"] for chunk in pdf_chunks]
-def encod_chunks(model_name, cont_to_encod):
+def encod_chunks(cont_to_encod,model_name):
   encoder = SentenceTransformer(model_name)
 
   embeddings = encoder.encode(
@@ -177,7 +177,7 @@ def add_to_index_storage(embeddings,chunks,collection_name):
   #         chunk_text = chunks[id]["chunk"]
   #         f.write(f"(({chunk_id})) - {chunk_text}\n")
   # index.add_with_ids(np.array(embeddings),ids)
-  return index
+  # return index
 
 # query_emb = encoder.encode("is your product trustworthy", normalize_embeddings=True, )
 # query_emb = query_emb.reshape(1, -1)

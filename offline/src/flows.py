@@ -4,7 +4,7 @@ def read_pdf_format(filepath,chunks_filename,collection_name,model_name="BAAI/bg
     content=load_pdf_content(filepath)
     content=format_text(content)
     sections = make_sections(content)
-    chunks = make_chunks(sections)
+    chunks = make_chunks(sections,0)
     embeddings = encod_chunks(model_name,chunks)
     add_to_index_storage(embeddings, chunks, collection_name)
     export_chunks(chunks, chunks_filename)

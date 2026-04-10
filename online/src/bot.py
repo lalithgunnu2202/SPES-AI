@@ -3,9 +3,9 @@ import sys
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-from src.online.ans import reply_to_user
+from online.src.ans import reply_to_user
 # from src.components.main import send_text
-from src.logger import logging
+# from src.logger import logging
 
 load_dotenv()
 
@@ -44,7 +44,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE, text=None):
     user_text = text or update.message.text
     user_ph_no = update.effective_user.id
-    logging.info("Recieved user text")
+    # logging.info("Recieved user text")
     # Show "typing" indicator
     await update.message.chat.send_action(action="typing")
     try:
@@ -58,7 +58,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE, tex
 
     except Exception as e:
         error_msg = f"❌ Error: {str(e)[:100]}..."
-        logging.error("Error while process the user request!!")
+        # logging.error("Error while process the user request!!")
         # More specific error messages
         if "rate limit" in str(e).lower() or "429" in str(e):
             error_msg = "⚠️ Rate limit exceeded. Free models allow ~2 requests per minute. Please wait a moment."
@@ -69,7 +69,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE, tex
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Log errors."""
-    logging.error(f"Update {update} caused error {context.error}")
+    # logging.error(f"Update {update} caused error {context.error}")
 
 def main():
     """Start the bot."""
@@ -77,7 +77,7 @@ def main():
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     
     if not token:
-        logging.error("TELEGRAM_BOT_TOKEN not found in environment variables!")
+        # logging.error("TELEGRAM_BOT_TOKEN not found in environment variables!")
         print("❌ Please set TELEGRAM_BOT_TOKEN in your .env file")
         print("Get a token from @BotFather on Telegram")
         return
