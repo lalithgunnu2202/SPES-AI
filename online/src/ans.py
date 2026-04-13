@@ -143,7 +143,7 @@ def gen_query(user_text):
     collection_name="static-collection",
     query=embed_query,
     with_payload=True,
-    limit=3
+    limit=2
     ).points
     print(search_result)
     print("search done")
