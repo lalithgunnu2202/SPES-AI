@@ -156,7 +156,7 @@ def gen_query(user_text):
     client2 = OpenrouterClient(custom_api_key)
     print("upto client 2 done")
     # Systematic Prompt for structural classification
-    system_prompt = f"""Role: [Brand Name] Info Assistant. Answer <query> using ONLY <inputs>.
+    system_prompt = f"""Role: Info Assistant. Answer <query> using ONLY <inputs>.
         Constraints:
         - No outside info. If missing, say: "I'm sorry, I don't have information on that specific topic. Please contact our support team for further assistance."
         - No sales, pricing, or order status mentions.

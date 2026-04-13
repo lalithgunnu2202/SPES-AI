@@ -29,4 +29,12 @@ if "bot_started" not in st.session_state:
     bot_thread.start()
     st.success("Telegram Bot Thread started!")
 
+
 st.write("Check your Telegram app to interact with the bot.")
+
+
+MAINTENANCE_MODE = True
+
+if MAINTENANCE_MODE:
+    st.warning("This app is currently paused for maintenance. Please check back later.")
+    st.stop() # Stops execution and prevents the rest of the app from loading
