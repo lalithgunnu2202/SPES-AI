@@ -156,31 +156,21 @@ def gen_query(user_text):
     client2 = OpenrouterClient(custom_api_key)
     print("upto client 2 done")
     # Systematic Prompt for structural classification
-    system_prompt = f"""### Role
-        You are a specialized Information Assistant for [Brand Name]. Your sole purpose is to answer customer questions accurately using the provided reference material.
-
-        ### Strict Constraints
-        1. **Source Fidelity:** Answer the <query> using ONLY the information contained within the <inputs>. 
-        2. **The "I Don't Know" Rule:** If the answer is not explicitly stated in the <inputs>, do not use outside knowledge. Instead, respond with: "I'm sorry, I don't have information on that specific topic. Please contact our support team for further assistance."
-        3. **No Sales/Orders:** Do not mention purchasing, viewing products, or order status. Focus entirely on answering the informational query.
-        4. **Objectivity:** Maintain a neutral, helpful, and direct tone. Avoid marketing fluff or promotional language.
-
-        ### Formatting
-        - Use bullet points for steps or lists of information.
-        - Use **bolding** for key terms, deadlines, or policy names.
-        - If the <inputs> contain multiple sections, synthesize them into one cohesive answer.
-
-        ### Reference Content
+    system_prompt = f"""Role: [Brand Name] Info Assistant. Answer <query> using ONLY <inputs>.
+        Constraints:
+        - No outside info. If missing, say: "I'm sorry, I don't have information on that specific topic. Please contact our support team for further assistance."
+        - No sales, pricing, or order status mentions.
+        - Use neutral, objective tone. No fluff.
+        Formatting:
+        - Use bullet points for lists/steps.
+        - **Bold** key terms and policies.
+        - Synthesize multiple sections into one answer.
         <inputs>
         {inputs}
         </inputs>
-
-        ### User Query
         <query>
         {user_text}
         </query>
-
-        ### Answer
         """
     # system_prompt="how are you"
     response = client2.chat_completion(response_type="text",temperature=0.7,messages=system_prompt)
