@@ -2,10 +2,12 @@ pandas
 dotenv
 openai
 pydantic
-telegram
+python-telegram-bot
 langchain-community
 numpy
 qdrant_client
 pymongo
 pypdf
 qdrant-client
+sentence-transformers
+streamlit

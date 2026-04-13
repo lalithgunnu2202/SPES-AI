@@ -1,8 +1,10 @@
 import pandas as pd
+# import sys
+import os
+# sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # from src.online.memory import get_product_memory,set_product_memory
 # from src.components.main import send_text
 from offline.src.read_scripts import encod_chunks
-import os
 import json
 from typing import Union
 from dotenv import load_dotenv
@@ -12,7 +14,9 @@ from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 from qdrant_client import QdrantClient
 # from pymongo import MongoClient
+# import sys
 
+# This ensures the directory containing 'bot.py' is in the search path
 # --- Pydantic Schema for Validation ---
 class IntentResponse(BaseModel):
     intent_id: int = Field(description="The numeric category of the intent")
@@ -25,23 +29,35 @@ class OpenrouterClient:
         self.api_key = api_key
         self.base_url = base_url
 
-    def chat_completion(self, model="nvidia/nemotron-nano-12b-v2-vl:free", messages=None, temperature=0.0):
+    def chat_completion(self, response_type, temperature, model="meta-llama/llama-3.2-3b-instruct:free", messages=None):
         client = OpenAI(
             base_url=self.base_url,
             api_key=self.api_key
         )
-        # temperature is set to 0.0 for deterministic JSON output
-        response = client.chat.completions.create(
-            model=model,
-            messages=[{
+        
+        # Build the payload
+        payload = {
+            "model": model,
+            "messages": [{
                 "role": "user",
                 "content": messages,
             }],
-            temperature=temperature,
-            response_format={"type": "json_object"} # Hints model to output JSON
-        )
-        matter = response.choices[0].message.content
-        return matter
+            "temperature": temperature,
+        }
+
+        # ONLY add response_format if you actually want JSON
+        if response_type == "json_object":
+            payload["response_format"] = {"type": "json_object"}
+
+        try:
+            response = client.chat.completions.create(**payload)
+            # This is where the 'NoneType' error usually happens if 'response' is empty
+            if response and response.choices:
+                return response.choices[0].message.content
+            else:
+                return "Error: Empty response from API"
+        except Exception as e:
+            return f"API Error: {str(e)}"
 load_dotenv()
 def intent_detection(query):
     load_dotenv()
@@ -66,7 +82,7 @@ def intent_detection(query):
     Query: "{query}"
     """
 
-    raw_response = client.chat_completion(messages=system_prompt, temperature=0.0)
+    raw_response = client.chat_completion("json_object",0.0 ,messages=system_prompt)
     
     try:
         # Step 1: Parse the string into JSON
@@ -122,17 +138,23 @@ def gen_query(user_text):
     api_key=os.getenv("QDRANT_API_KEY"),
     )
     embed_query=encod_chunks(user_text,model_name="BAAI/bge-small-en-v1.5")
+    print("embedding done")
     search_result = qdrant_client.query_points(
     collection_name="static-collection",
     query=embed_query,
     with_payload=True,
     limit=3
     ).points
-    inputs = [item["payload"] for item in search_result]
-
+    print(search_result)
+    print("search done")
+    # This version only includes the payload if it isn't None
+    inputs = [item.payload for item in search_result if item.payload is not None]
+    print(inputs)
+    formatted_inputs = "\n".join([str(i) for i in inputs]) if inputs else "No information found."
+    print(formatted_inputs)
     custom_api_key = os.getenv("CUSTOM_API_KEY")
-    client = OpenrouterClient(custom_api_key)
-
+    client2 = OpenrouterClient(custom_api_key)
+    print("upto client 2 done")
     # Systematic Prompt for structural classification
     system_prompt = f"""### Role
         You are a specialized Information Assistant for [Brand Name]. Your sole purpose is to answer customer questions accurately using the provided reference material.
@@ -160,7 +182,10 @@ def gen_query(user_text):
 
         ### Answer
         """
-    response = client.chat_completion(messages=system_prompt, temperature=0.7)
+    # system_prompt="how are you"
+    response = client2.chat_completion(response_type="text",temperature=0.7,messages=system_prompt)
+    print("response done")
+    print(response)
     return response
 
 def gen_prod_query(user_text):
@@ -182,7 +207,7 @@ def process_message(user_text):
         # product=see_prod(intent_dict)
         # order_prod(intent_dict)
 
-    elif intent_dict["intent_id"]==3:
+    elif intent_dict["intent_id"]==3: #fully functioning upto here
         message=gen_query(user_text)
         return message
 
