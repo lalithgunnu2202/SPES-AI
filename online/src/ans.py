@@ -4,6 +4,9 @@ import os
 # sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # from src.online.memory import get_product_memory,set_product_memory
 # from src.components.main import send_text
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+
 from offline.src.read_scripts import encod_chunks
 import json
 from typing import Union
