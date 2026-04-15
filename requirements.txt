@@ -11,3 +11,5 @@ pypdf
 qdrant-client
 sentence-transformers
 streamlit
+torch
+torchvision
