@@ -29,7 +29,7 @@ class OpenrouterClient:
         self.api_key = api_key
         self.base_url = base_url
 
-    def chat_completion(self, response_type, temperature, model="liquid/lfm-2.5-1.2b-instruct:free", messages=None):
+    def chat_completion(self, response_type, temperature, model="nvidia/nemotron-3-nano-30b-a3b:free", messages=None):
         client = OpenAI(
             base_url=self.base_url,
             api_key=self.api_key
@@ -70,7 +70,7 @@ def intent_detection(query):
     Classify the user query into exactly one intent_id:
     1. See product with specific product_id, id starts with 'a'
     2. Place order with specific product_id, id starts with 'a'
-    3. General query (greetings, business info, human support)
+    3. General query regarding policies (greetings, business info, human support)
     4. Track delivery status / Filing complaint
     5. Order/See product BUT product_id is MISSING (Intent 6/7 in your logic, simplified here)
 
@@ -106,7 +106,7 @@ db=mongo_client["Spes-AI"]
 products_collection=db["products"]
 def see_prod(intent_dict):
     prod_id=intent_dict["product_id"]
-    product = products_collection.find_one({"product_id": prod_id})
+    product = products_collection.find_one({"prod_id": prod_id})
     if product:
         product.pop('_id', None) # Clean up the response
     return product
