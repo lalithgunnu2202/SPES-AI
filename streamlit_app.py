@@ -33,7 +33,7 @@ if "bot_started" not in st.session_state:
 st.write("Check your Telegram app to interact with the bot.")
 
 
-MAINTENANCE_MODE = True
+MAINTENANCE_MODE = False
 
 if MAINTENANCE_MODE:
     st.warning("This app is currently paused for maintenance. Please check back later.")
