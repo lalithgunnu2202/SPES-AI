@@ -59,14 +59,69 @@ class OpenrouterClient:
         except Exception as e:
             return f"API Error: {str(e)}"
 load_dotenv()
-def intent_detection(query):
-    load_dotenv()
-    print(f"User Query: {query}")
-    custom_api_key = os.getenv("CUSTOM_API_KEY")
-    client = OpenrouterClient(custom_api_key)
 
-    # Systematic Prompt for structural classification
-    system_prompt = f"""
+import torch
+import gc
+import json
+
+
+from transformers import AutoProcessor, AutoModelForCausalLM
+
+processor = AutoProcessor.from_pretrained("google/translategemma-4b-it")
+model = AutoModelForCausalLM.from_pretrained("google/translategemma-4b-it")
+
+def llm_query(query):
+    # Setup the structured message for the processor
+    # We include the instructions within the text content
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "source_lang_code": "en", # Kept as per your source format
+                    "target_lang_code": "en",
+                    "text": query
+                }
+            ]
+        }
+    ]
+
+    # Process inputs for the model
+    inputs = processor.apply_chat_template(
+        messages,
+        add_generation_prompt=True,
+        tokenize=True,
+        return_dict=True,
+        return_tensors="pt",
+    ).to(model.device)
+
+    # Clean up token_type_ids if the specific model requires it
+    inputs.pop("token_type_ids", None)
+
+    # Inference
+    with torch.inference_mode():
+        with torch.autocast("cuda", dtype=torch.float16):
+            generated_ids = model.generate(
+                **inputs,
+                max_new_tokens=128 # Reduced since we only need a small JSON
+            )
+
+    # Decode response
+    output_text = processor.decode(
+        generated_ids[0][inputs["input_ids"].shape[1]:],
+        skip_special_tokens=True
+    ).strip()
+
+    # Memory Cleanup
+    del generated_ids, inputs
+    gc.collect()
+    torch.cuda.empty_cache()
+    return output_text
+
+
+def intent_detection(query):
+    output=llm_query(f"""
     Classify the user query into exactly one intent_id:
     1. See product with specific product_id
     2. Place order with specific product_id
@@ -80,28 +135,20 @@ def intent_detection(query):
     - Return ONLY a JSON object.
 
     Query: "{query}"
-    """
-
-    raw_response = client.chat_completion("json_object",0.0 ,messages=system_prompt)
-    
+    """)
     try:
-        # Step 1: Parse the string into JSON
-        data = json.loads(raw_response)
-        
-        # Step 2: Validate with Pydantic
-        validated_data = IntentResponse(**data)
-        
-        print(f"Validated JSON: {validated_data.model_dump()}")
-        return validated_data.model_dump()
-        
-    except (json.JSONDecodeError, ValidationError) as e:
-        print(f"Error parsing LLM response: {e}")
-        # Fallback to a safe 'General' classification
+        # Attempt to parse the model output into a dictionary
+        return json.loads(output)
+    except json.JSONDecodeError:
+        # Fallback if the model returns non-JSON text
+        print(f"Failed to parse LLM output: {output}")
         return {"intent_id": 3, "product_id": 0, "order_id": 0}
+    
 uri=os.getenv('MONGO_URI')
 mongo_client = MongoClient(uri, server_api=ServerApi('1'))
 db=mongo_client["Spes-AI"]
 products_collection=db["products"]
+
 def see_prod(intent_dict):
     prod_id=intent_dict["product_id"]
     product = products_collection.find_one({"product_id": prod_id})
@@ -126,6 +173,7 @@ def view_prod(product,indent=0):
     return message
 
 order_collection=db["Orders"]
+
 def order_prod(intent_dict):
     prod_id=intent_dict["product_id"]
     product=see_prod(intent_dict)
@@ -173,7 +221,7 @@ def gen_query(user_text):
         </query>
         """
     # system_prompt="how are you"
-    response = client2.chat_completion(response_type="text",temperature=0.7,messages=system_prompt)
+    response = llm_query(system_prompt)
     print("response done")
     print(response)
     return response
