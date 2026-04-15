@@ -29,7 +29,7 @@ class OpenrouterClient:
         self.api_key = api_key
         self.base_url = base_url
 
-    def chat_completion(self, response_type, temperature, model="meta-llama/llama-3.2-3b-instruct:free", messages=None):
+    def chat_completion(self, response_type, temperature, model="liquid/lfm-2.5-1.2b-instruct:free", messages=None):
         client = OpenAI(
             base_url=self.base_url,
             api_key=self.api_key
