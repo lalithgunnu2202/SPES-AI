@@ -59,6 +59,8 @@ class OpenrouterClient:
         except Exception as e:
             return f"API Error: {str(e)}"
 load_dotenv()
+
+#working
 def intent_detection(query):
     load_dotenv()
     print(f"User Query: {query}")
@@ -111,6 +113,7 @@ def see_prod(intent_dict):
         product.pop('_id', None) # Clean up the response
     return product
 
+#working
 def view_prod(product,indent=0):
     spacing = "  " * indent
     message=""
@@ -134,6 +137,7 @@ def order_prod(intent_dict):
     message=view_prod(product)
     pass
 
+#working
 def gen_query(user_text):
     qdrant_client = QdrantClient(
     url=os.getenv("QDRANT_URL"), 
