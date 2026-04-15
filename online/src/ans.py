@@ -1,8 +1,10 @@
 import pandas as pd
+# import sys
+import os
+# sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # from src.online.memory import get_product_memory,set_product_memory
 # from src.components.main import send_text
 from offline.src.read_scripts import encod_chunks
-import os
 import json
 from typing import Union
 from dotenv import load_dotenv
@@ -12,7 +14,9 @@ from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 from qdrant_client import QdrantClient
 # from pymongo import MongoClient
+# import sys
 
+# This ensures the directory containing 'bot.py' is in the search path
 # --- Pydantic Schema for Validation ---
 class IntentResponse(BaseModel):
     intent_id: int = Field(description="The numeric category of the intent")
@@ -25,23 +29,35 @@ class OpenrouterClient:
         self.api_key = api_key
         self.base_url = base_url
 
-    def chat_completion(self, model="nvidia/nemotron-nano-12b-v2-vl:free", messages=None, temperature=0.0):
+    def chat_completion(self, response_type, temperature, model="liquid/lfm-2.5-1.2b-instruct:free", messages=None):
         client = OpenAI(
             base_url=self.base_url,
             api_key=self.api_key
         )
-        # temperature is set to 0.0 for deterministic JSON output
-        response = client.chat.completions.create(
-            model=model,
-            messages=[{
+        
+        # Build the payload
+        payload = {
+            "model": model,
+            "messages": [{
                 "role": "user",
                 "content": messages,
             }],
-            temperature=temperature,
-            response_format={"type": "json_object"} # Hints model to output JSON
-        )
-        matter = response.choices[0].message.content
-        return matter
+            "temperature": temperature,
+        }
+
+        # ONLY add response_format if you actually want JSON
+        if response_type == "json_object":
+            payload["response_format"] = {"type": "json_object"}
+
+        try:
+            response = client.chat.completions.create(**payload)
+            # This is where the 'NoneType' error usually happens if 'response' is empty
+            if response and response.choices:
+                return response.choices[0].message.content
+            else:
+                return "Error: Empty response from API"
+        except Exception as e:
+            return f"API Error: {str(e)}"
 load_dotenv()
 def intent_detection(query):
     load_dotenv()
@@ -52,22 +68,24 @@ def intent_detection(query):
     # Systematic Prompt for structural classification
     system_prompt = f"""
     Classify the user query into exactly one intent_id:
-    1. See product with specific product_id
-    2. Place order with specific product_id
+    1. See product with specific product_id, id starts with 'a'
+    2. Place order with specific product_id, id starts with 'a'
     3. General query (greetings, business info, human support)
     4. Track delivery status / Filing complaint
     5. Order/See product BUT product_id is MISSING (Intent 6/7 in your logic, simplified here)
 
     Rules:
+    - You must return a JSON object with the following keys: "intent_id", "product_id", "order_id", and "confidence_score".
+    - "intent_id" must be the integer (1-5) representing the classification.
     - If intent involves a product but NO product_id is found, set product_id to 0.
     - If intent involves an order but NO order_id is found, set order_id to 0.
-    - Return ONLY a JSON object.
-
+    - "confidence_score" should be a float between 0 and 1.
+    - Return ONLY valid JSON.
     Query: "{query}"
     """
 
-    raw_response = client.chat_completion(messages=system_prompt, temperature=0.0)
-    
+    raw_response = client.chat_completion("json_object",0.0 ,messages=system_prompt)
+    print(raw_response)
     try:
         # Step 1: Parse the string into JSON
         data = json.loads(raw_response)
@@ -122,45 +140,44 @@ def gen_query(user_text):
     api_key=os.getenv("QDRANT_API_KEY"),
     )
     embed_query=encod_chunks(user_text,model_name="BAAI/bge-small-en-v1.5")
+    print("embedding done")
     search_result = qdrant_client.query_points(
     collection_name="static-collection",
     query=embed_query,
     with_payload=True,
-    limit=3
+    limit=2
     ).points
-    inputs = [item["payload"] for item in search_result]
-
+    print(search_result)
+    print("search done")
+    # This version only includes the payload if it isn't None
+    inputs = [item.payload for item in search_result if item.payload is not None]
+    print(inputs)
+    formatted_inputs = "\n".join([str(i) for i in inputs]) if inputs else "No information found."
+    print(formatted_inputs)
     custom_api_key = os.getenv("CUSTOM_API_KEY")
-    client = OpenrouterClient(custom_api_key)
-
+    client2 = OpenrouterClient(custom_api_key)
+    print("upto client 2 done")
     # Systematic Prompt for structural classification
-    system_prompt = f"""### Role
-        You are a specialized Information Assistant for [Brand Name]. Your sole purpose is to answer customer questions accurately using the provided reference material.
-
-        ### Strict Constraints
-        1. **Source Fidelity:** Answer the <query> using ONLY the information contained within the <inputs>. 
-        2. **The "I Don't Know" Rule:** If the answer is not explicitly stated in the <inputs>, do not use outside knowledge. Instead, respond with: "I'm sorry, I don't have information on that specific topic. Please contact our support team for further assistance."
-        3. **No Sales/Orders:** Do not mention purchasing, viewing products, or order status. Focus entirely on answering the informational query.
-        4. **Objectivity:** Maintain a neutral, helpful, and direct tone. Avoid marketing fluff or promotional language.
-
-        ### Formatting
-        - Use bullet points for steps or lists of information.
-        - Use **bolding** for key terms, deadlines, or policy names.
-        - If the <inputs> contain multiple sections, synthesize them into one cohesive answer.
-
-        ### Reference Content
+    system_prompt = f"""Role: Info Assistant. Answer <query> using ONLY <inputs>.
+        Constraints:
+        - No outside info. If missing, say: "I'm sorry, I don't have information on that specific topic. Please contact our support team for further assistance."
+        - No sales, pricing, or order status mentions.
+        - Use neutral, objective tone. No fluff.
+        Formatting:
+        - Use bullet points for lists/steps.
+        - **Bold** key terms and policies.
+        - Synthesize multiple sections into one answer.
         <inputs>
         {inputs}
         </inputs>
-
-        ### User Query
         <query>
         {user_text}
         </query>
-
-        ### Answer
         """
-    response = client.chat_completion(messages=system_prompt, temperature=0.7)
+    # system_prompt="how are you"
+    response = client2.chat_completion(response_type="text",temperature=0.7,messages=system_prompt)
+    print("response done")
+    print(response)
     return response
 
 def gen_prod_query(user_text):
@@ -182,7 +199,7 @@ def process_message(user_text):
         # product=see_prod(intent_dict)
         # order_prod(intent_dict)
 
-    elif intent_dict["intent_id"]==3:
+    elif intent_dict["intent_id"]==3: #fully functioning upto here
         message=gen_query(user_text)
         return message
 

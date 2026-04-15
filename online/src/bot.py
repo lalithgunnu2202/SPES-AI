@@ -1,8 +1,15 @@
-import os
-import sys
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+import sys
+import os
+
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
+sys.path.append(ROOT_DIR)
+# # This ensures the directory containing 'bot.py' is in the search path
+# sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# Now you can import 'ans' directly without dots or 'online'
 from online.src.ans import reply_to_user
 # from src.components.main import send_text
 # from src.logger import logging
@@ -103,7 +110,7 @@ def main():
     print("Press Ctrl+C to stop")
     
     # Run the bot until Ctrl+C
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    application.run_polling(stop_signals=False,allowed_updates=Update.ALL_TYPES)
 
 if __name__ == '__main__':
     main()
