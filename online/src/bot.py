@@ -10,7 +10,11 @@ sys.path.append(ROOT_DIR)
 # sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Now you can import 'ans' directly without dots or 'online'
+<<<<<<< HEAD
 from online.src.ans import reply_to_user
+=======
+from .ans import reply_to_user
+>>>>>>> main
 # from src.components.main import send_text
 # from src.logger import logging
 

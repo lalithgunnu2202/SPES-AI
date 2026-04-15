@@ -1,9 +1,16 @@
+# import pandas as pd
+# import sys
+import os
+# sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import pandas as pd
 # import sys
 import os
 # sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # from src.online.memory import get_product_memory,set_product_memory
 # from src.components.main import send_text
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+
 from offline.src.read_scripts import encod_chunks
 import json
 from typing import Union
@@ -15,7 +22,9 @@ from pymongo.server_api import ServerApi
 from qdrant_client import QdrantClient
 # from pymongo import MongoClient
 # import sys
+# import sys
 
+# This ensures the directory containing 'bot.py' is in the search path
 # This ensures the directory containing 'bot.py' is in the search path
 # --- Pydantic Schema for Validation ---
 class IntentResponse(BaseModel):
@@ -39,9 +48,30 @@ class OpenrouterClient:
         payload = {
             "model": model,
             "messages": [{
+        
+        # Build the payload
+        payload = {
+            "model": model,
+            "messages": [{
                 "role": "user",
                 "content": messages,
             }],
+            "temperature": temperature,
+        }
+
+        # ONLY add response_format if you actually want JSON
+        if response_type == "json_object":
+            payload["response_format"] = {"type": "json_object"}
+
+        try:
+            response = client.chat.completions.create(**payload)
+            # This is where the 'NoneType' error usually happens if 'response' is empty
+            if response and response.choices:
+                return response.choices[0].message.content
+            else:
+                return "Error: Empty response from API"
+        except Exception as e:
+            return f"API Error: {str(e)}"
             "temperature": temperature,
         }
 
@@ -141,12 +171,21 @@ def gen_query(user_text):
     )
     embed_query=encod_chunks(user_text,model_name="BAAI/bge-small-en-v1.5")
     print("embedding done")
+    print("embedding done")
     search_result = qdrant_client.query_points(
     collection_name="static-collection",
     query=embed_query,
     with_payload=True,
     limit=2
+    limit=2
     ).points
+    print(search_result)
+    print("search done")
+    # This version only includes the payload if it isn't None
+    inputs = [item.payload for item in search_result if item.payload is not None]
+    print(inputs)
+    formatted_inputs = "\n".join([str(i) for i in inputs]) if inputs else "No information found."
+    print(formatted_inputs)
     print(search_result)
     print("search done")
     # This version only includes the payload if it isn't None
@@ -157,7 +196,18 @@ def gen_query(user_text):
     custom_api_key = os.getenv("CUSTOM_API_KEY")
     client2 = OpenrouterClient(custom_api_key)
     print("upto client 2 done")
+    client2 = OpenrouterClient(custom_api_key)
+    print("upto client 2 done")
     # Systematic Prompt for structural classification
+    system_prompt = f"""Role: Info Assistant. Answer <query> using ONLY <inputs>.
+        Constraints:
+        - No outside info. If missing, say: "I'm sorry, I don't have information on that specific topic. Please contact our support team for further assistance."
+        - No sales, pricing, or order status mentions.
+        - Use neutral, objective tone. No fluff.
+        Formatting:
+        - Use bullet points for lists/steps.
+        - **Bold** key terms and policies.
+        - Synthesize multiple sections into one answer.
     system_prompt = f"""Role: Info Assistant. Answer <query> using ONLY <inputs>.
         Constraints:
         - No outside info. If missing, say: "I'm sorry, I don't have information on that specific topic. Please contact our support team for further assistance."
@@ -174,6 +224,10 @@ def gen_query(user_text):
         {user_text}
         </query>
         """
+    # system_prompt="how are you"
+    response = client2.chat_completion(response_type="text",temperature=0.7,messages=system_prompt)
+    print("response done")
+    print(response)
     # system_prompt="how are you"
     response = client2.chat_completion(response_type="text",temperature=0.7,messages=system_prompt)
     print("response done")
@@ -199,6 +253,7 @@ def process_message(user_text):
         # product=see_prod(intent_dict)
         # order_prod(intent_dict)
 
+    elif intent_dict["intent_id"]==3: #fully functioning upto here
     elif intent_dict["intent_id"]==3: #fully functioning upto here
         message=gen_query(user_text)
         return message
