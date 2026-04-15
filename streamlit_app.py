@@ -5,9 +5,7 @@ import sys
 
 # 1. FIX THE PATHS (The "Nuclear" fix we discussed)
 # This allows your scripts to find 'online' and 'offline' folders
-root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "."))
-if root_path not in sys.path:
-    sys.path.insert(0, root_path)
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Import your existing bot logic
 # Assuming your main bot logic is in online/src/bot.py
