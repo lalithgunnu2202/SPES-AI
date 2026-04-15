@@ -5,10 +5,8 @@ import sys
 
 # 1. FIX THE PATHS (The "Nuclear" fix we discussed)
 # This allows your scripts to find 'online' and 'offline' folders
-root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "."))
-if root_path not in sys.path:
-    sys.path.insert(0, root_path)
-
+root_path = os.path.abspath(os.path.dirname(__file__))
+sys.path.insert(0, root_path)
 # Import your existing bot logic
 # Assuming your main bot logic is in online/src/bot.py
 from online.src.bot import main as run_telegram_bot
@@ -29,4 +27,12 @@ if "bot_started" not in st.session_state:
     bot_thread.start()
     st.success("Telegram Bot Thread started!")
 
+
 st.write("Check your Telegram app to interact with the bot.")
+
+
+MAINTENANCE_MODE = False
+
+if MAINTENANCE_MODE:
+    st.warning("This app is currently paused for maintenance. Please check back later.")
+    st.stop() # Stops execution and prevents the rest of the app from loading

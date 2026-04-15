@@ -1,9 +1,12 @@
-import pandas as pd
+# import pandas as pd
 # import sys
 import os
 # sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # from src.online.memory import get_product_memory,set_product_memory
 # from src.components.main import send_text
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+
 from offline.src.read_scripts import encod_chunks
 import json
 from typing import Union
@@ -143,7 +146,7 @@ def gen_query(user_text):
     collection_name="static-collection",
     query=embed_query,
     with_payload=True,
-    limit=3
+    limit=2
     ).points
     print(search_result)
     print("search done")
@@ -156,7 +159,7 @@ def gen_query(user_text):
     client2 = OpenrouterClient(custom_api_key)
     print("upto client 2 done")
     # Systematic Prompt for structural classification
-    system_prompt = f"""Role: [Brand Name] Info Assistant. Answer <query> using ONLY <inputs>.
+    system_prompt = f"""Role: Info Assistant. Answer <query> using ONLY <inputs>.
         Constraints:
         - No outside info. If missing, say: "I'm sorry, I don't have information on that specific topic. Please contact our support team for further assistance."
         - No sales, pricing, or order status mentions.
